@@ -6,7 +6,7 @@ use warnings;
 
 =head1 NAME
 
-VarGuard - The great new VarGuard!
+VarGuard - safe clean blocks for variables
 
 =head1 VERSION
 
@@ -16,38 +16,74 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
-
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
 
     use VarGuard;
 
-    my $foo = VarGuard->new();
-    ...
+    {
+	var_guard { print "$_[0]\n" } my $scalar;
+	$scalar = 'abc';
+    } # print "abc\n"; when scalar is destroyed
+
+    {
+	var_guard { print "@_\n" } my @array;
+	...
+    }
+
+    {
+	var_guard { print "@_\n" } my %hash;
+	...
+    }
+
+    {
+	var_guard { $_[0]() } my $code;
+	$code = sub { ... };
+	...
+    }
+
+=head1 DESCRIPTION
+
+This module is similar to L<Guard>, except that this module is guard on a variable.
+
+=head1 CAVEAT
+
+This module will tie something on the variable. So don't use it on a tied variable,
+or tie the guarded variable.
 
 =head1 EXPORT
 
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+var_guard
 
-=head1 SUBROUTINES/METHODS
+=head1 SUBROUTINES
 
-=head2 function1
-
-=cut
-
-sub function1 {
-}
-
-=head2 function2
+=head2 var_guard { ...code block... } VAR(could be $, @, %, or any reference)
 
 =cut
 
-sub function2 {
+use base qw(Exporter);
+our @EXPORT = qw(var_guard);
+
+use VarGuard::Scalar;
+use VarGuard::Array;
+use VarGuard::Hash;
+
+sub var_guard(&\[$@%*]) {
+    my($cb, $var) = @_;
+    my $ref_type = ref $var;
+    if( $ref_type eq 'SCALAR' or $ref_type eq 'CODE' ) {
+	tie $$var, 'VarGuard::Scalar', $cb;
+    }
+    elsif( $ref_type eq 'ARRAY' ) {
+	tie @$var, 'VarGuard::Array', $cb;
+    }
+    elsif( $ref_type eq 'HASH' ) {
+	tie %$var, 'VarGuard::Hash', $cb;
+    }
+    else {
+	die "type: $ref_type is not supported.";
+    }
 }
+
 
 =head1 AUTHOR
 
@@ -59,42 +95,6 @@ Please report any bugs or feature requests to C<bug-varguard at rt.cpan.org>, or
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=VarGuard>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
-
-
-
-=head1 SUPPORT
-
-You can find documentation for this module with the perldoc command.
-
-    perldoc VarGuard
-
-
-You can also look for information at:
-
-=over 4
-
-=item * RT: CPAN's request tracker (report bugs here)
-
-L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=VarGuard>
-
-=item * AnnoCPAN: Annotated CPAN documentation
-
-L<http://annocpan.org/dist/VarGuard>
-
-=item * CPAN Ratings
-
-L<http://cpanratings.perl.org/d/VarGuard>
-
-=item * Search CPAN
-
-L<http://search.cpan.org/dist/VarGuard/>
-
-=back
-
-
-=head1 ACKNOWLEDGEMENTS
-
-
 =head1 LICENSE AND COPYRIGHT
 
 Copyright 2011 Cindy Wang (CindyLinz).
@@ -105,6 +105,9 @@ by the Free Software Foundation; or the Artistic License.
 
 See http://dev.perl.org/licenses/ for more information.
 
+=head1 SEE ALSO
+
+L<Guard>
 
 =cut
 
