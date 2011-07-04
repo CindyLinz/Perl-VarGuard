@@ -14,6 +14,15 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM => {
         'Test::More' => 0,
+	'Tie::Scalar' => 0,
+	'Tie::Array' => 0,
+	'Tie::Hash' => 0,
+    },
+    PM => {
+	'lib/VarGuard.pm' => '$(INST_LIBDIR)/VarGuard.pm',
+	'lib/VarGuard/Scalar.pm' => '$(INST_LIBDIR)/VarGuard/Scalar.pm',
+	'lib/VarGuard/Array.pm' => '$(INST_LIBDIR)/VarGuard/Array.pm',
+	'lib/VarGuard/Hash.pm' => '$(INST_LIBDIR)/VarGuard/Hash.pm',
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'VarGuard-*' },
